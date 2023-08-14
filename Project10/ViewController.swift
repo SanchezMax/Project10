@@ -14,6 +14,20 @@ class ViewController: UICollectionViewController, UIImagePickerControllerDelegat
         super.viewDidLoad()
         // Do any additional setup after loading the view.
         navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addNewPerson))
+        
+        let defaults = UserDefaults.standard
+        if let savedObject = defaults.object(forKey: "people") as? Data {
+//            if let decodedPeople = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(savedObject) as? [Person] {
+//                people = decodedPeople
+//            }
+            
+            if let decodedPeople = try? NSKeyedUnarchiver.unarchivedArrayOfObjects(ofClasses: [Person.self], from: savedObject) as? [Person] {
+                people = decodedPeople
+            }
+        }
+        
+        
+        people = defaults.array(forKey: "people") as? [Person] ?? [Person]()
     }
 
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -66,6 +80,7 @@ class ViewController: UICollectionViewController, UIImagePickerControllerDelegat
         
         let person = Person(name: "Unknown", image: imageName)
         people.append(person)
+        save()
         collectionView.reloadData()
         
         dismiss(animated: true)
@@ -101,6 +116,7 @@ class ViewController: UICollectionViewController, UIImagePickerControllerDelegat
             UIAlertAction(title: "OK", style: .default) { [weak self, weak ac] _ in
                 guard let newName = ac?.textFields?[0].text else { return }
                 person.name = newName
+                self?.save()
                 self?.collectionView.reloadData()
             }
         )
@@ -117,5 +133,12 @@ class ViewController: UICollectionViewController, UIImagePickerControllerDelegat
         people.remove(at: index)
         
         collectionView.reloadData()
+    }
+    
+    func save() {
+        if let savedData = try? NSKeyedArchiver.archivedData(withRootObject: people, requiringSecureCoding: false) {
+            let defaults = UserDefaults.standard
+            defaults.set(savedData, forKey: "people")
+        }
     }
 }
